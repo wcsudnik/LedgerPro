@@ -19,7 +19,7 @@
         </p>
     </div>
     {% if role == 'superuser' %}
-    <a href="/admin/orgs/organization/add/" class="btn">+ New Organization</a>
+    <a href="{% url 'create_org' %}" class="btn">+ New Organization</a>
     {% endif %}
 </div>
 

@@ -192,6 +192,68 @@ def review_request(request, req_id):
 
 
 
+@login_required
+def create_org(request):
+    """Superuser only: Create a new organization."""
+    if not request.user.is_superuser:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        budget_raw = request.POST.get('budget', '0')
+        
+        try:
+            budget = Decimal(budget_raw)
+        except (InvalidOperation, ValueError):
+            budget = Decimal('0.00')
+
+        org = Organization.objects.create(
+            name=strip_tags(name),
+            description=strip_tags(description),
+            budget=budget
+        )
+        AuditLog.objects.create(
+            organization=org,
+            user=request.user,
+            action=f"Created organization '{org.name}' with initial budget ${budget:,.2f}."
+        )
+        messages.success(request, f"Organization '{org.name}' created.")
+        return redirect('dashboard')
+    
+    return render(request, 'orgs/create_org.html')
+
+
+@login_required
+def edit_org(request, org_id):
+    """Admins can edit description; Superusers can also edit name and budget."""
+    org = get_object_or_404(Organization, id=org_id)
+    if not is_admin_for_org(request.user, org):
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        org.description = strip_tags(request.POST.get('description', '').strip())
+        
+        # Identity-sensitive fields restricted to Superusers
+        if request.user.is_superuser:
+            org.name = strip_tags(request.POST.get('name', '').strip())
+            try:
+                org.budget = Decimal(request.POST.get('budget', '0'))
+            except (InvalidOperation, ValueError):
+                pass
+        
+        org.save()
+        AuditLog.objects.create(
+            organization=org,
+            user=request.user,
+            action=f"Updated organization settings."
+        )
+        messages.success(request, "Organization settings updated.")
+        return redirect('org_detail', org_id=org.id)
+
+    return render(request, 'orgs/edit_org.html', {'org': org})
+
+
 # ── Superuser views ────────────────────────────────────────────────────────────
 
 @login_required

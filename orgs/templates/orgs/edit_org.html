@@ -1,0 +1,49 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}Edit {{ org.name }} – LedgerPro{% endblock %}
+
+{% block content %}
+<a href="{% url 'org_detail' org.id %}" class="back-link">&larr; Back to {{ org.name }}</a>
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <div style="margin-bottom: 24px;">
+        <h1 class="page-title">Organization Settings</h1>
+        <p class="page-subtitle">Update details for <strong>{{ org.name }}</strong></p>
+    </div>
+
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            {% if user.is_superuser %}
+            <div class="form-group">
+                <label class="form-label">Organization Name</label>
+                <input type="text" name="name" class="form-control" value="{{ org.name }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Total Capital Account ($)</label>
+                <input type="number" name="budget" step="0.01" class="form-control" value="{{ org.budget }}">
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Warning: Changing this directly
+                    affects available funds for all projects.</p>
+            </div>
+            {% else %}
+            <div style="margin-bottom: 20px; padding: 12px; background: var(--bg); border-radius: 8px;">
+                <p style="font-size: 13px; color: var(--text-muted);">Name and Budget can only be modified by the
+                    Institution Superuser.</p>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="6"
+                    placeholder="Briefly describe the purpose of this organization...">{{ org.description }}</textarea>
+            </div>
+
+            <hr class="divider">
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="{% url 'org_detail' org.id %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

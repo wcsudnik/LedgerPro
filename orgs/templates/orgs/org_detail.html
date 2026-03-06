@@ -14,8 +14,12 @@
 <!-- ORG HEADER CARD -->
 <div class="card"
     style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; padding: 24px 28px; border-left: 4px solid var(--primary);">
-    <div>
-        <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px;">{{ org.name }}</h1>
+    <div style="flex: 1;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+            <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">{{ org.name }}</h1>
+            <a href="{% url 'edit_org' org.id %}" class="btn btn-outline"
+                style="font-size: 11px; padding: 4px 10px; height: 24px;">Edit Settings</a>
+        </div>
         <p style="color: var(--text-muted); font-size: 13px; max-width: 480px;">{{ org.description|default:"Welcome to
             the organization's financial portal." }}</p>
     </div>

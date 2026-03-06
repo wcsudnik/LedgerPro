@@ -9,7 +9,9 @@ urlpatterns = [
     path('requests/<int:req_id>/review/', views.review_request, name='review_request'),
 
     # Org pages
+    path('new-org/', views.create_org, name='create_org'),
     path('org/<int:org_id>/', views.org_detail, name='org_detail'),
+    path('org/<int:org_id>/edit/', views.edit_org, name='edit_org'),
     path('org/<int:org_id>/new-project/', views.create_project, name='create_project'),
 
     # Project pages
