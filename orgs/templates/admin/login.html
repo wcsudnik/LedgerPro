@@ -1,0 +1,16 @@
+{% extends "orgs/base.html" %}
+
+{% block title %}Django Admin{% endblock %}
+
+{% block content %}
+<div class="glass-card" style="max-width: 600px; margin: 4rem auto; padding: 2.5rem; text-align: center;">
+    <h1 style="color: white; font-size: 2rem; margin-bottom: 1rem;">Admin Required</h1>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">You are either not signed in, or signed in as an Officer
+        who does not have access to the master LedgerPro administrative controls.</p>
+
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="{% url 'account_login' %}?next=/admin/" class="btn">Sign In as Admin</a>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline">Return to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

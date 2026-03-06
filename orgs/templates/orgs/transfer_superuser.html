@@ -1,0 +1,42 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}Transfer Superuser Role – LedgerPro{% endblock %}
+
+{% block content %}
+<a href="{% url 'superuser_dashboard' %}" class="back-link">&larr; Back to Control Panel</a>
+
+<div style="max-width: 560px; margin: 0 auto;">
+    <div style="margin-bottom: 24px;">
+        <h1 class="page-title">Transfer Superuser Role</h1>
+        <p class="page-subtitle">Transfer the single superuser role for <strong>{{ institution.name }}</strong> to
+            another user account.</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <div class="card" style="border-left: 4px solid var(--danger);">
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+            <strong style="color: var(--danger);">Warning:</strong> This action cannot be undone. Once the role is
+            transferred, you will lose superuser access and will no longer be able to manage this institution. The new
+            user must have a registered account with an email address.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">New Superuser Email Address</label>
+                <input type="email" name="email" class="form-control" placeholder="user@example.edu" required autofocus>
+                <div style="margin-top: 6px; font-size: 11px; color: var(--text-label);">Enter the exact email of the
+                    user who will receive all superuser permissions.</div>
+            </div>
+            <hr class="divider">
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="{% url 'superuser_dashboard' %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn" style="background: var(--danger);">Confirm Transfer &larr;</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

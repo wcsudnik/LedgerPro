@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "/Users/wcsudnik/Desktop/StudentLedger/venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.extraPaths": [
+        "/Users/wcsudnik/Desktop/StudentLedger/venv/lib/python3.13/site-packages"
+    ]
+}

@@ -1,0 +1,85 @@
+{% extends "orgs/base.html" %}
+{% load i18n %}
+
+{% block title %}Sign Up - LedgerPro{% endblock %}
+
+{% block content %}
+<style>
+    /* Clean up default django-allauth form styles */
+    .signup-form p {
+        margin-bottom: 1.5rem;
+    }
+
+    .signup-form label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .signup-form input {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--surface-border);
+        color: white;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-family: inherit;
+        transition: border-color 0.2s;
+    }
+
+    .signup-form input:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .signup-form ul.errorlist {
+        list-style: none;
+        padding: 0;
+        margin-top: 0.25rem;
+        color: var(--danger);
+        font-size: 0.85em;
+    }
+
+    .signup-form .helptext {
+        display: block;
+        margin-top: 0.25rem;
+        color: var(--text-muted);
+        font-size: 0.85em;
+    }
+</style>
+
+<div class="glass-card" style="max-width: 450px; margin: 4rem auto; padding: 2.5rem;">
+    <h1 style="color: white; font-size: 2rem; margin-bottom: 0.5rem; text-align: center;">Create Account</h1>
+    <p style="color: var(--text-muted); text-align: center; margin-bottom: 2rem;">Join LedgerPro as an Officer</p>
+
+    <form class="signup signup-form" id="signup_form" method="post" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        {% for field in form %}
+        <div class="form-group">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.help_text %}
+            <span class="helptext">{{ field.help_text|safe }}</span>
+            {% endif %}
+            {{ field.errors }}
+        </div>
+        {% endfor %}
+
+        {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+        {% endif %}
+
+        <button class="btn" type="submit" style="width: 100%; margin-top: 1rem; padding: 0.75rem;">Sign Up</button>
+    </form>
+
+    <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9em;">
+        <span style="color: var(--text-muted);">Already have an account?</span>
+        <a href="{% url 'account_login' %}" style="color: var(--primary); text-decoration: none; font-weight: 500;">Sign
+            In</a>
+    </div>
+</div>
+{% endblock %}

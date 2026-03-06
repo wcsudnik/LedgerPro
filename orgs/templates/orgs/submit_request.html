@@ -1,0 +1,39 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}Submit Capital Request – LedgerPro{% endblock %}
+
+{% block content %}
+<a href="{% url 'project_detail' org.id project.id %}" class="back-link">&larr; {{ project.name }}</a>
+
+<div style="max-width: 560px; margin: 0 auto;">
+    <div style="margin-bottom: 24px;">
+        <h1 class="page-title">Submit Capital Request</h1>
+        <p class="page-subtitle">For project <strong>{{ project.name }}</strong> &mdash; {{ org.name }}</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Amount Requested ($)</label>
+                <input type="number" step="0.01" min="0.01" name="amount" class="form-control" placeholder="0.00"
+                    required autofocus>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Purpose / Justification</label>
+                <textarea name="purpose" class="form-control" rows="4"
+                    placeholder="Describe what these funds will be used for..." required></textarea>
+            </div>
+            <hr class="divider">
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="{% url 'project_detail' org.id project.id %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

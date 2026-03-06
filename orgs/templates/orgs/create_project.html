@@ -1,0 +1,44 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}New Project – {{ org.name }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'org_detail' org.id %}" class="back-link">&larr; Back to {{ org.name }}</a>
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <div style="margin-bottom: 24px;">
+        <h1 class="page-title">Create New Project</h1>
+        <p class="page-subtitle">For organization: <strong>{{ org.name }}</strong></p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Project Name <span style="color: var(--danger);">*</span></label>
+                <input type="text" name="name" class="form-control"
+                    placeholder="e.g. Fall Tournament, Community Fundraiser" required autofocus>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="3"
+                    placeholder="Briefly describe what this project is about..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bulletin / Announcements</label>
+                <textarea name="bulletin" class="form-control" rows="4"
+                    placeholder="This text will be prominently displayed on the project page..."></textarea>
+            </div>
+            <hr class="divider">
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="{% url 'org_detail' org.id %}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Project</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

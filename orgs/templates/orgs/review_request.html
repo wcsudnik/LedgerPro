@@ -1,0 +1,88 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}Review Request #{{ req.id }} – LedgerPro{% endblock %}
+
+{% block content %}
+<a href="{% url 'all_requests' %}" class="back-link">&larr; All Requests</a>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-info">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div style="max-width: 680px; margin: 0 auto;">
+    <div style="margin-bottom: 24px;">
+        <h1 class="page-title">Review Capital Request #{{ req.id }}</h1>
+        <p class="page-subtitle">{{ req.organization.name }} &rarr; {{ req.project.name }}</p>
+    </div>
+
+    <!-- DETAILS -->
+    <div class="card" style="margin-bottom: 16px;">
+        <div
+            style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border);">
+            <div>
+                <div
+                    style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-label); margin-bottom: 4px;">
+                    Amount</div>
+                <div class="money" style="font-size: 22px;">${{ req.amount }}</div>
+            </div>
+            <div>
+                <div
+                    style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-label); margin-bottom: 4px;">
+                    Submitted By</div>
+                <div style="font-weight: 600;">{{ req.submitted_by.username }}</div>
+                <div style="font-size: 12px; color: var(--text-muted);">{{ req.created_at|date:"M d, Y g:i A" }}</div>
+            </div>
+            <div>
+                <div
+                    style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-label); margin-bottom: 4px;">
+                    Status</div>
+                <span class="badge {{ req.status|lower }}">{{ req.get_status_display }}</span>
+            </div>
+        </div>
+        <div>
+            <div
+                style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-label); margin-bottom: 8px;">
+                Purpose</div>
+            <p style="font-size: 14px; line-height: 1.6; color: var(--text-main);">{{ req.purpose }}</p>
+        </div>
+    </div>
+
+    {% if req.status == 'PENDING' %}
+    <!-- REVIEW FORM -->
+    <div class="card">
+        <h2 style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">Admin Decision</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Note (optional)</label>
+                <textarea name="note" class="form-control" rows="3"
+                    placeholder="Add a note explaining your decision..."></textarea>
+            </div>
+            <hr class="divider">
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="submit" name="action" value="reject" class="btn btn-outline"
+                    style="border-color: #FCA5A5; color: var(--danger) !important;">
+                    Reject Request
+                </button>
+                <button type="submit" name="action" value="approve" class="btn btn-primary">
+                    Approve &amp; Debit Budget &rarr;
+                </button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="card"
+        style="border-color: {% if req.status == 'APPROVED' %}#86EFAC{% else %}#FCA5A5{% endif %}; background: {% if req.status == 'APPROVED' %}var(--success-bg){% else %}var(--danger-bg){% endif %};">
+        <p
+            style="font-weight: 600; color: {% if req.status == 'APPROVED' %}var(--success){% else %}var(--danger){% endif %};">
+            This request has been {{ req.status|lower }}.
+        </p>
+        {% if req.admin_note %}
+        <p style="font-size: 13px; margin-top: 6px; color: var(--text-muted);">Note: {{ req.admin_note }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

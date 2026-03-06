@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LedgerPro{% endblock %}</title>
+    <meta name="description" content="LedgerPro – Student Organization Finance Suite">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6D28D9;
+            --primary-hover: #5B21B6;
+            --black: #0A0A0A;
+            --black-hover: #1F1F1F;
+            --bg: #F1F5F9;
+            --sidebar-bg: #FFFFFF;
+            --surface: #FFFFFF;
+            --border: #E5E7EB;
+            --border-focus: #6D28D9;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --text-label: #9CA3AF;
+            --success: #16A34A;
+            --success-bg: #DCFCE7;
+            --danger: #DC2626;
+            --danger-bg: #FEE2E2;
+            --warning: #D97706;
+            --warning-bg: #FEF3C7;
+            --purple-bg: #EDE9FE;
+            --purple-text: #6D28D9;
+            --sidebar-width: 256px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ── SIDEBAR ──────────────────────────────────────────────── */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 40;
+        }
+
+        .sidebar-header {
+            padding: 20px 16px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .sidebar-logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--black);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .sidebar-logo-icon svg {
+            color: white;
+        }
+
+        .sidebar-logo-text {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.3px;
+        }
+
+        .sidebar-logo-text span {
+            color: var(--primary);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px 8px;
+            overflow-y: auto;
+        }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-label);
+            padding: 12px 8px 6px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.15s, color 0.15s;
+            margin-bottom: 2px;
+        }
+
+        .nav-link:hover {
+            background: var(--bg);
+            color: var(--text-main);
+        }
+
+        .nav-link.active {
+            background: var(--purple-bg);
+            color: var(--purple-text);
+        }
+
+        .nav-link svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+
+        .nav-link.active svg {
+            opacity: 1;
+        }
+
+        .sidebar-footer {
+            padding: 12px 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: default;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--primary) 0%, #4F46E5 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+
+        .user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* ── MAIN CONTENT ─────────────────────────────────────────── */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 30;
+        }
+
+        .top-bar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .top-bar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .container {
+            padding: 32px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* ── COMPONENTS ───────────────────────────────────────────── */
+        .page-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: box-shadow 0.15s, border-color 0.15s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+            border-color: #D1D5DB;
+        }
+
+        /* Backwards compat alias */
+        .glass-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: box-shadow 0.15s, border-color 0.15s;
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+            border-color: #D1D5DB;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--black);
+            color: #FFFFFF !important;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            font-family: inherit;
+            letter-spacing: -0.1px;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: var(--black-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main) !important;
+        }
+
+        .btn-outline:hover {
+            background: var(--bg);
+            border-color: #D1D5DB;
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted) !important;
+            padding: 8px 12px;
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg);
+            color: var(--text-main) !important;
+            transform: none;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white !important;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.1px;
+        }
+
+        .badge.pending {
+            background: var(--warning-bg);
+            color: var(--warning);
+        }
+
+        .badge.approved {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        .badge.rejected {
+            background: var(--danger-bg);
+            color: var(--danger);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-main);
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.1);
+            background: white;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 10px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            font-size: 13px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #FAFAFA;
+        }
+
+        /* Money */
+        .money {
+            font-family: 'Inter', monospace;
+            font-weight: 700;
+            font-size: 1em;
+            color: var(--success);
+        }
+
+        /* Alert / flash */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            border: 1px solid transparent;
+        }
+
+        .alert-success {
+            background: var(--success-bg);
+            color: var(--success);
+            border-color: #86EFAC;
+        }
+
+        .alert-error {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border-color: #FCA5A5;
+        }
+
+        .alert-info {
+            background: var(--purple-bg);
+            color: var(--purple-text);
+            border-color: #C4B5FD;
+        }
+
+        /* Divider */
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 20px 0;
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.15s;
+        }
+
+        .back-link:hover {
+            color: var(--text-main);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ── SIDEBAR ── -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="{% url 'dashboard' %}" class="sidebar-logo">
+                <div class="sidebar-logo-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
+                </div>
+                <span class="sidebar-logo-text">Ledger<span>Pro</span></span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <span class="nav-section-label">Navigation</span>
+
+            <a href="{% url 'dashboard' %}" class="nav-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                Dashboard
+            </a>
+
+            <a href="{% url 'all_requests' %}" class="nav-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                </svg>
+                Capital Requests
+            </a>
+
+            {% if user.is_superuser %}
+            <span class="nav-section-label">Administration</span>
+            <a href="{% url 'superuser_dashboard' %}" class="nav-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                Control Panel
+            </a>
+            <a href="/admin/" class="nav-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                    <path d="M4.93 4.93a10 10 0 0 0 0 14.14" />
+                </svg>
+                Admin Panel
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            {% if user.is_authenticated %}
+            <div class="user-pill">
+                <div class="user-avatar">{{ user.username|slice:":1" }}</div>
+                <div class="user-info">
+                    <div class="user-name">{{ user.username }}</div>
+                    <div class="user-role">
+                        {% if user.is_superuser %}Superuser{% elif user.is_staff %}Admin{% else %}Officer{% endif %}
+                    </div>
+                </div>
+            </div>
+            <form action="{% url 'account_logout' %}" method="post" style="margin-top: 4px;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost"
+                    style="width: 100%; justify-content: center; font-size: 13px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                    </svg>
+                    Sign out
+                </button>
+            </form>
+            {% else %}
+            <a href="{% url 'account_login' %}" class="btn" style="width: 100%; justify-content: center;">Sign in</a>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- ── MAIN ── -->
+    <div class="main-wrapper">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+
+</html>

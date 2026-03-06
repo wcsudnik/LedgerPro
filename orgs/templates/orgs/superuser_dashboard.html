@@ -1,0 +1,124 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}Control Panel – LedgerPro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Institution Control Panel</h1>
+        {% if institution %}
+        <p class="page-subtitle">Managing <strong>{{ institution.name }}</strong></p>
+        {% endif %}
+    </div>
+    <a href="{% url 'transfer_superuser' %}" class="btn btn-outline">Transfer Superuser Role</a>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-info">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start;">
+
+    <!-- ALL ORGANIZATIONS -->
+    <div>
+        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Registered Organizations</h2>
+        {% for org in all_orgs %}
+        <div class="card" style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 15px; font-weight: 700;">{{ org.name }}</h3>
+                <span class="money">${{ org.budget }}</span>
+            </div>
+
+            <div style="font-size: 12px; margin-bottom: 8px;">
+                <span
+                    style="color: var(--text-label); font-weight: 600; text-transform: uppercase; font-size: 10px;">Admins:</span>
+                <span style="color: var(--text-muted);">
+                    {% for a in org.admins.all %}{{ a.username }}{% if not forloop.last %}, {% endif %}{% empty %}None{%
+                    endfor %}
+                </span>
+            </div>
+
+            <div style="font-size: 12px; margin-bottom: 16px;">
+                <span
+                    style="color: var(--text-label); font-weight: 600; text-transform: uppercase; font-size: 10px;">Officers:</span>
+                <span style="color: var(--text-muted);">
+                    {% for o in org.officers.all %}{{ o.username }}{% if not forloop.last %}, {% endif %}{% empty
+                    %}None{% endfor %}
+                </span>
+            </div>
+
+            <a href="{% url 'org_detail' org.id %}" class="btn btn-outline"
+                style="font-size: 11px; padding: 6px 12px;">Manage Org &rarr;</a>
+        </div>
+        {% empty %}
+        <div class="card" style="text-align: center; color: var(--text-muted); padding: 32px;">No organizations created
+            yet.</div>
+        {% endfor %}
+    </div>
+
+    <!-- USER MANAGEMENT -->
+    <div>
+        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">User Access Control</h2>
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in all_users %}
+                    {% if not u.is_superuser %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">{{ u.username }}</div>
+                            <div style="font-size: 11px; color: var(--text-muted);">{{ u.email|default:"No email" }}
+                            </div>
+                        </td>
+                        <td>
+                            {% if u.is_staff %}
+                            <span class="badge approved">Admin</span>
+                            {% else %}
+                            <span class="badge pending">Officer</span>
+                            {% endif %}
+                        </td>
+                        <td style="min-width: 180px;">
+                            {% if u.org_admin_of.exists %}
+                            {% for org in u.org_admin_of.all %}
+                            <form method="post" action="{% url 'revoke_admin' u.id %}" style="margin-bottom: 4px;">
+                                {% csrf_token %}
+                                <input type="hidden" name="org_id" value="{{ org.id }}">
+                                <button type="submit" class="btn btn-outline"
+                                    style="font-size: 10px; padding: 4px 8px; color: var(--danger) !important; border-color: #FCA5A5;">
+                                    Revoke Admin ({{ org.name }})
+                                </button>
+                            </form>
+                            {% endfor %}
+                            {% else %}
+                            <form method="post" action="{% url 'make_admin' u.id %}" style="display: flex; gap: 6px;">
+                                {% csrf_token %}
+                                <select name="org_id" class="form-control"
+                                    style="font-size: 11px; padding: 4px 8px; height: 28px;">
+                                    {% for org in all_orgs %}
+                                    <option value="{{ org.id }}">{{ org.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn" style="font-size: 11px; padding: 4px 10px;">Grant
+                                    Admin</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

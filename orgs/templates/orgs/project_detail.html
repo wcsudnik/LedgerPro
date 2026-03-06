@@ -1,0 +1,83 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}{{ project.name }} – LedgerPro{% endblock %}
+
+{% block content %}
+<a href="{% url 'org_detail' org.id %}" class="back-link">&larr; {{ org.name }}</a>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-info">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<!-- PROJECT HEADER -->
+<div class="card"
+    style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; padding: 24px 28px; border-left: 4px solid var(--primary);">
+    <div>
+        <h1 style="font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px;">{{ project.name }}
+        </h1>
+        <p style="color: var(--text-muted); font-size: 13px;">{{ project.description|default:"No description provided."
+            }}</p>
+    </div>
+    <div style="text-align: right;">
+        <div
+            style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-label); margin-bottom: 4px;">
+            Project Budget</div>
+        <div class="money" style="font-size: 28px; letter-spacing: -1px;">${{ project.allocated_budget }}</div>
+        {% if is_admin %}
+        <a href="{% url 'allocate_funds' org.id project.id %}" class="btn btn-outline"
+            style="margin-top: 10px; font-size: 12px; padding: 6px 12px;">+ Allocate Funds</a>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start;">
+
+    <!-- BULLETIN -->
+    <div>
+        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 14px;">Project Bulletin</h2>
+        <div class="card" style="background: var(--purple-bg); border-color: #C4B5FD;">
+            <p style="font-size: 14px; line-height: 1.7; color: #3B0764;">
+                {{ project.bulletin|default:"No announcements posted yet."|linebreaks }}
+            </p>
+        </div>
+    </div>
+
+    <!-- REQUESTS -->
+    <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h2 style="font-size: 16px; font-weight: 700;">Capital Requests</h2>
+            <a href="{% url 'submit_request_project' org.id project.id %}" class="btn"
+                style="font-size: 12px; padding: 7px 14px;">+ Submit</a>
+        </div>
+        {% for req in requests %}
+        <div class="card" style="padding: 14px 16px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <span class="money" style="font-size: 16px;">${{ req.amount }}</span>
+                <span class="badge {{ req.status|lower }}">{{ req.get_status_display }}</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 6px;">{{ req.purpose|truncatewords:15 }}
+            </p>
+            <div style="font-size: 11px; color: var(--text-label);">
+                {{ req.submitted_by.username }} &middot; {{ req.created_at|date:"M d, Y" }}
+            </div>
+            {% if req.admin_note %}
+            <div
+                style="margin-top: 8px; font-size: 12px; color: var(--purple-text); background: var(--purple-bg); padding: 6px 10px; border-radius: 6px; border: 1px solid #C4B5FD;">
+                Admin note: {{ req.admin_note }}
+            </div>
+            {% endif %}
+            {% if is_admin and req.status == 'PENDING' %}
+            <a href="{% url 'review_request' req.id %}" class="btn btn-primary"
+                style="margin-top: 10px; font-size: 12px; padding: 6px 12px; display: inline-flex;">Review</a>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="card" style="text-align: center; padding: 28px; color: var(--text-muted); font-size: 13px;">No
+            requests yet.</div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

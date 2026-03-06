@@ -1,0 +1,64 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}Dashboard – LedgerPro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            {% if role == 'superuser' %}All Organizations
+            {% elif role == 'admin' %}My Organizations
+            {% else %}My Organizations
+            {% endif %}
+        </h1>
+        <p class="page-subtitle">
+            {% if role == 'superuser' %}Viewing all organizations across the institution
+            {% elif role == 'admin' %}Organizations you manage
+            {% else %}Organizations you are an officer of
+            {% endif %}
+        </p>
+    </div>
+    {% if role == 'superuser' %}
+    <a href="/admin/orgs/organization/add/" class="btn">+ New Organization</a>
+    {% endif %}
+</div>
+
+<div class="grid">
+    {% for org in organizations %}
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 16px;">
+        <div>
+            <h2 style="font-size: 17px; font-weight: 700; margin-bottom: 6px; color: var(--text-main);">{{ org.name }}
+            </h2>
+            <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5;">
+                {{ org.description|truncatewords:15|default:"No description provided." }}
+            </p>
+        </div>
+        <div
+            style="border-top: 1px solid var(--border); padding-top: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div
+                    style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-label); margin-bottom: 2px;">
+                    Budget</div>
+                <div class="money" style="font-size: 18px;">${{ org.budget }}</div>
+            </div>
+            <a href="{% url 'org_detail' org.id %}" class="btn btn-outline"
+                style="font-size: 12px; padding: 7px 14px;">Enter Portal &rarr;</a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 48px 24px;">
+        <div
+            style="width: 40px; height: 40px; background: var(--bg); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            </svg>
+        </div>
+        <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">No Organizations Found</h3>
+        <p style="color: var(--text-muted); font-size: 13px;">
+            {% if role == 'superuser' or role == 'admin' %}Start by creating one via the Admin panel.
+            {% else %}You have not been assigned to any organization yet.{% endif %}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
