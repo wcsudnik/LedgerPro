@@ -9,8 +9,12 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import os
+from dotenv import load_dotenv
+import dj_database_url
 from pathlib import Path
+
+load_dotenv()
 
 # ──────────────────────────────────────────────────────────────────────────────
 # JAZZMIN ADMIN UI SETTINGS
@@ -82,10 +86,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3)4i(t=90ocpadfe^dbz_^nj%#)d!*64(=dy#_+*d7o*0393%g'
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = []
 
@@ -105,6 +109,9 @@ INSTALLED_APPS = [
     # Django authentication module
     'allauth',
     'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.saml',
 
     # Django double-entry bookkeeping module
     'django_ledger',
@@ -125,7 +132,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # allauth middleware
     'allauth.account.middleware.AccountMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware'
 ]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 ROOT_URLCONF = 'core.urls'
 
@@ -151,10 +168,10 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        # Default to SQLite if DATABASE_URL is not set
+        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}"
+    )
 }
 
 
@@ -202,3 +219,35 @@ AUTHENTICATION_BACKENDS = [
 SITE_ID = 1
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# SSO Configuration
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APPS': [
+            {
+                'client_id': os.getenv('GOOGLE_CLIENT_ID', 'placeholder'),
+                'secret': os.getenv('GOOGLE_CLIENT_SECRET', 'placeholder'),
+                'key': ''
+            }
+        ],
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+    },
+    'saml': {
+        'APPS': [
+            {
+                'client_id': 'ledgerpro-saml',
+                'label': 'Institution SSO',
+                'metadata_url': os.getenv('SAML_METADATA_URL', 'https://example.com/metadata'), 
+                'attribute_mapping': {
+                    'email': 'urn:oid:0.9.2342.19200300.100.1.3',
+                    'username': 'urn:oid:0.9.2342.19200300.100.1.1',
+                }
+            }
+        ]
+    }
+}
+
+# Auto-signup and domain restriction example (optional)
+# SOCIALACCOUNT_AUTO_SIGNUP = True
+# SOCIALACCOUNT_ADAPTER = 'orgs.adapters.MySocialAccountAdapter'
