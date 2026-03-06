@@ -15,7 +15,6 @@ urlpatterns = [
     # Project pages
     path('org/<int:org_id>/project/<int:project_id>/', views.project_detail, name='project_detail'),
     path('org/<int:org_id>/project/<int:project_id>/request/', views.submit_request, name='submit_request_project'),
-    path('org/<int:org_id>/project/<int:project_id>/allocate/', views.allocate_funds, name='allocate_funds'),
 
     # Superuser management
     path('superuser/', views.superuser_dashboard, name='superuser_dashboard'),

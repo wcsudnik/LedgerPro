@@ -45,17 +45,10 @@
                 <div style="font-size: 15px; font-weight: 600; margin-bottom: 3px;">{{ project.name }}</div>
                 <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 6px;">{{
                     project.description|truncatewords:10 }}</div>
-                <div style="font-size: 12px; font-weight: 600; color: var(--success);">Budget: ${{
-                    project.allocated_budget }}</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
                 <a href="{% url 'project_detail' org.id project.id %}" class="btn btn-outline"
                     style="font-size: 12px; padding: 6px 12px; white-space: nowrap;">View &rarr;</a>
-                {% if is_admin %}
-                <a href="{% url 'allocate_funds' org.id project.id %}"
-                    style="font-size: 11px; color: var(--primary); text-decoration: none; font-weight: 500;">+ Allocate
-                    Funds</a>
-                {% endif %}
             </div>
         </div>
         {% empty %}

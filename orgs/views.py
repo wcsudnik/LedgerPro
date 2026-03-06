@@ -163,15 +163,13 @@ def review_request(request, req_id):
 
         with transaction.atomic():
             if action == 'approve':
-                # Security: Check for sufficient budget before approving
-                if req.amount > req.project.allocated_budget:
-                    messages.error(request, f"Cannot approve: Request exceeds project budget (Available: ${req.project.allocated_budget:,.2f})")
+                # Security: Check for sufficient organization budget before approving
+                if req.amount > req.organization.budget:
+                    messages.error(request, f"Cannot approve: Request exceeds organization budget (Available: ${req.organization.budget:,.2f})")
                     return redirect('review_request', req_id=req_id)
 
                 req.status = 'APPROVED'
-                # Debit from both project and org budgets
-                req.project.allocated_budget -= req.amount
-                req.project.save()
+                # Debit directly from the organization budget
                 req.organization.budget -= req.amount
                 req.organization.save()
             else:
@@ -192,48 +190,6 @@ def review_request(request, req_id):
     return render(request, 'orgs/review_request.html', {'req': req})
 
 
-@login_required
-def allocate_funds(request, org_id, project_id):
-    """Transfer funds from the org's main budget to a project's allocated budget."""
-    org = get_object_or_404(Organization, id=org_id)
-    if not is_admin_for_org(request.user, org):
-        return redirect('dashboard')
-
-    project = get_object_or_404(Project, id=project_id, organization=org)
-
-    if request.method == 'POST':
-        raw_amount = request.POST.get('amount')
-        try:
-            amount = Decimal(raw_amount)
-            if amount <= 0:
-                raise ValueError()
-        except (InvalidOperation, ValueError, TypeError):
-            return render(request, 'orgs/allocate_funds.html', {
-                'org': org, 'project': project,
-                'error': "Please enter a valid positive dollar amount."
-            })
-
-        if amount > org.budget:
-            return render(request, 'orgs/allocate_funds.html', {
-                'org': org, 'project': project,
-                'error': f"Insufficient org budget. Available: ${org.budget:,.2f}"
-            })
-
-        with transaction.atomic():
-            org.budget -= amount
-            org.save()
-            project.allocated_budget += amount
-            project.save()
-            AuditLog.objects.create(
-                organization=org,
-                user=request.user,
-                action=f"Allocated ${amount:,.2f} from org budget to project '{project.name}'."
-            )
-
-        messages.success(request, f"${amount:,.2f} allocated to {project.name}.")
-        return redirect('project_detail', org_id=org.id, project_id=project.id)
-
-    return render(request, 'orgs/allocate_funds.html', {'org': org, 'project': project})
 
 
 # ── Superuser views ────────────────────────────────────────────────────────────

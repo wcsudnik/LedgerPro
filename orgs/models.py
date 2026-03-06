@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.html import strip_tags
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -51,17 +52,24 @@ class Organization(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if self.description:
+            self.description = strip_tags(self.description)
+        super().save(*args, **kwargs)
+
 
 class Project(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='projects')
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     bulletin = models.TextField(blank=True, help_text="Project bulletin board")
-    allocated_budget = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0.00,
-        help_text="Capital allocated from the main Org budget to this project"
-    )
 
+    def save(self, *args, **kwargs):
+        if self.description:
+            self.description = strip_tags(self.description)
+        if self.bulletin:
+            self.bulletin = strip_tags(self.bulletin)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.name} ({self.organization.name})"
 
@@ -82,6 +90,13 @@ class CapitalRequest(models.Model):
     admin_note = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.purpose:
+            self.purpose = strip_tags(self.purpose)
+        if self.admin_note:
+            self.admin_note = strip_tags(self.admin_note)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Request {self.id} – {self.project.name} – ${self.amount}"

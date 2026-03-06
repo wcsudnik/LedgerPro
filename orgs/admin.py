@@ -18,7 +18,7 @@ class OrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('name', 'organization', 'allocated_budget')
+    list_display = ('name', 'organization')
     list_filter = ('organization',)
 
 
