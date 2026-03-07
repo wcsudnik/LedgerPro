@@ -143,6 +143,41 @@ def record_credit(request, org_id, project_id):
 
 
 @login_required
+def update_org_budget(request, org_id):
+    org = get_object_or_404(Organization, id=org_id)
+    if not is_admin_for_org(request.user, org):
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        raw_amount = request.POST.get('amount')
+        try:
+            amount = Decimal(raw_amount)
+            if amount < 0:
+                raise ValueError()
+        except (InvalidOperation, ValueError, TypeError):
+            return render(request, 'orgs/update_org_budget.html', {
+                'org': org,
+                'error': "Please enter a valid non-negative dollar amount."
+            })
+
+        with transaction.atomic():
+            locked_org = Organization.objects.select_for_update().get(id=org_id)
+            old_budget = locked_org.budget
+            locked_org.budget = amount
+            locked_org.save()
+
+            AuditLog.objects.create(
+                organization=locked_org,
+                user=request.user,
+                action=f"Updated main organization budget from ${old_budget:,.2f} to ${amount:,.2f}."
+            )
+
+        messages.success(request, f"{org.name} budget updated successfully.")
+        return redirect('org_detail', org_id=org.id)
+
+    return render(request, 'orgs/update_org_budget.html', {'org': org})
+
+@login_required
 def all_requests(request):
     """Show capital requests scoped strictly to what the user has access to."""
     user = request.user

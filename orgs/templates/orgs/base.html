@@ -608,7 +608,8 @@
                 <div class="user-info">
                     <div class="user-name">{{ user.username }}</div>
                     <div class="user-role">
-                        {% if user.is_superuser %}Superuser{% elif user.is_staff %}Admin{% else %}Officer{% endif %}
+                        {% if is_platform_admin %}Platform Admin{% elif is_any_superuser %}Institution Superuser{% elif
+                        user.org_admin_of.exists %}Org Admin{% else %}Officer{% endif %}
                     </div>
                 </div>
             </div>

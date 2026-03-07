@@ -16,7 +16,8 @@
     style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; padding: 24px 28px; border-left: 4px solid var(--primary);">
     <div style="flex: 1;">
         <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px;">{{ org.name }}</h1>
-        <p style="color: var(--text-muted); font-size: 13px; max-width: 480px; margin-bottom: 8px;">{{ org.description|default:"Welcome to the organization's financial portal." }}</p>
+        <p style="color: var(--text-muted); font-size: 13px; max-width: 480px; margin-bottom: 8px;">{{
+            org.description|default:"Welcome to the organization's financial portal." }}</p>
         <a href="{% url 'org_analytics' org.id %}"
             style="font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -32,7 +33,14 @@
         <div
             style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-label); margin-bottom: 4px;">
             Org Capital Account</div>
-        <div class="money" style="font-size: 32px; letter-spacing: -1px;">${{ org.budget }}</div>
+        <div class="money"
+            style="font-size: 32px; letter-spacing: -1px; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+            ${{ org.budget }}
+            {% if is_admin %}
+            <a href="{% url 'update_org_budget' org.id %}" class="btn btn-outline"
+                style="font-size: 11px; padding: 4px 8px; margin-bottom: 4px;">✎ Edit</a>
+            {% endif %}
+        </div>
     </div>
 </div>
 
@@ -52,8 +60,10 @@
             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 16px 20px;">
             <div>
                 <div style="font-size: 15px; font-weight: 600; margin-bottom: 3px;">{{ project.name }}</div>
-                <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 6px;">{{ project.description|truncatewords:10 }}</div>
-                <div style="font-size: 12px; font-weight: 600; color: var(--success);">Budget: ${{ project.allocated_budget }}</div>
+                <div style="color: var(--text-muted); font-size: 12px; margin-bottom: 6px;">{{
+                    project.description|truncatewords:10 }}</div>
+                <div style="font-size: 12px; font-weight: 600; color: var(--success);">Budget: ${{
+                    project.allocated_budget }}</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
                 <a href="{% url 'project_detail' org.id project.id %}" class="btn btn-outline"
@@ -122,7 +132,8 @@
             <div style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
                     <span style="font-weight: 600; font-size: 13px;">{{ log.user.username|default:"System" }}</span>
-                    <span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">{{ log.timestamp|date:"M d, H:i" }}</span>
+                    <span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">{{
+                        log.timestamp|date:"M d, H:i" }}</span>
                 </div>
                 <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">{{ log.action }}</p>
             </div>

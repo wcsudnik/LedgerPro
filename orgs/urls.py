@@ -11,6 +11,7 @@ urlpatterns = [
 
     # Org pages
     path('org/<int:org_id>/', views.org_detail, name='org_detail'),
+    path('org/<int:org_id>/update-budget/', views.update_org_budget, name='update_org_budget'),
     path('org/<int:org_id>/new-project/', views.create_project, name='create_project'),
 
     # Project pages

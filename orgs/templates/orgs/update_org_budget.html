@@ -1,0 +1,35 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}Update Budget for {{ org.name }} – LedgerPro{% endblock %}
+
+{% block content %}
+<a href="{% url 'org_detail' org.id %}" class="back-link">&larr; Back to {{ org.name }}</a>
+
+<div class="card" style="max-width: 500px; margin: 40px auto;">
+    <h1 style="font-size: 20px; font-weight: 700; margin-bottom: 24px;">Update Organization Budget</h1>
+    <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 24px;">
+        Update the main capital account budget for <strong>{{ org.name }}</strong>. This represents the total pool of
+        unallocated funds available to the organization.
+    </p>
+
+    {% if error %}
+    <div class="alert alert-danger" style="margin-bottom: 24px;">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" style="display: flex; flex-direction: column; gap: 16px;">
+        {% csrf_token %}
+        <div>
+            <label style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px;">New Budget Amount
+                ($)</label>
+            <input type="number" name="amount" class="form-control" value="{{ org.budget }}" step="0.01" required>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                Enter the new total available budget. This will overwrite the current budget of ${{ org.budget }}.
+            </div>
+        </div>
+
+        <div style="margin-top: 8px;">
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Update Budget</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
