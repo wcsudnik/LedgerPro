@@ -140,19 +140,15 @@
             <div style="font-size: 12px; margin-bottom: 8px;">
                 <span
                     style="color: var(--text-label); font-weight: 600; text-transform: uppercase; font-size: 10px;">Admins:</span>
-                <span style="color: var(--text-muted);">
-                    {% for a in org.admins.all %}{{ a.username }}{% if not forloop.last %}, {% endif %}{% empty %}None{%
-                    endfor %}
-                </span>
+                <span style="color: var(--text-muted);">{% for a in org.admins.all %}{{ a.username }}{% if not
+                    forloop.last %}, {% endif %}{% empty %}None{% endfor %}</span>
             </div>
 
             <div style="font-size: 12px; margin-bottom: 16px;">
                 <span
                     style="color: var(--text-label); font-weight: 600; text-transform: uppercase; font-size: 10px;">Officers:</span>
-                <span style="color: var(--text-muted);">
-                    {% for o in org.officers.all %}{{ o.username }}{% if not forloop.last %}, {% endif %}{% empty
-                    %}None{% endfor %}
-                </span>
+                <span style="color: var(--text-muted);">{% for o in org.officers.all %}{{ o.username }}{% if not
+                    forloop.last %}, {% endif %}{% empty %}None{% endfor %}</span>
             </div>
 
             <div style="display: flex; gap: 8px;">

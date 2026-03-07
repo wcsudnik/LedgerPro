@@ -21,6 +21,13 @@ import datetime
 # Permission helpers are imported from utils.py
 
 
+def landing(request):
+    """The public landing page."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'orgs/landing.html')
+
+
 @login_required
 def dashboard(request):
     user = request.user
@@ -93,7 +100,7 @@ def project_detail(request, org_id, project_id):
 @login_required
 def record_credit(request, org_id, project_id):
     org = get_object_or_404(Organization, id=org_id)
-    if not can_access_org(request.user, org):
+    if not is_admin_for_org(request.user, org):
         return redirect('dashboard')
     
     project = get_object_or_404(Project, id=project_id, organization=org)
@@ -112,21 +119,22 @@ def record_credit(request, org_id, project_id):
              return redirect('project_detail', org_id=org.id, project_id=project.id)
 
         with transaction.atomic():
+            locked_project = Project.objects.select_for_update().get(id=project.id)
             CreditEvent.objects.create(
-                project=project,
+                project=locked_project,
                 amount=amount,
                 source=source,
                 description=escape(description)
             )
             
             # Increase the project's available budget
-            project.allocated_budget += amount
-            project.save()
+            locked_project.allocated_budget += amount
+            locked_project.save()
             
             AuditLog.objects.create(
                 organization=org,
                 user=request.user,
-                action=f"Recorded positive credit event for project '{project.name}': {description} (${amount:,.2f})"
+                action=f"Recorded positive credit event for project '{locked_project.name}': {description} (${amount:,.2f})"
             )
         
         messages.success(request, f"Credit of ${amount:,.2f} recorded for {project.name}.")
@@ -224,28 +232,35 @@ def review_request(request, req_id):
             return redirect('review_request', req_id=req_id)
 
         with transaction.atomic():
+            locked_req = CapitalRequest.objects.select_for_update().get(id=req.id)
+            
+            if locked_req.status != 'PENDING':
+                messages.warning(request, "This request has already been reviewed.")
+                return redirect('all_requests')
+
             if action == 'approve':
+                locked_project = Project.objects.select_for_update().get(id=locked_req.project_id)
                 # Security: Check for sufficient balance before approving
-                if req.amount > req.project.allocated_budget:
-                    messages.error(request, f"Cannot approve: Request exceeds project budget (Available: ${req.project.allocated_budget:,.2f})")
+                if locked_req.amount > locked_project.allocated_budget:
+                    messages.error(request, f"Cannot approve: Request exceeds project budget (Available: ${locked_project.allocated_budget:,.2f})")
                     return redirect('review_request', req_id=req_id)
 
-                req.status = 'APPROVED'
+                locked_req.status = 'APPROVED'
                 # Debit from project budget. 
                 # Note: We do NOT subtract from organization.budget here because 
                 # that was already deducted when the funds were originally allocated to the project.
-                req.project.allocated_budget -= req.amount
-                req.project.save()
+                locked_project.allocated_budget -= locked_req.amount
+                locked_project.save()
             else:
-                req.status = 'REJECTED'
+                locked_req.status = 'REJECTED'
 
-            req.admin_note = escape(note) # Safeguard notes
-            req.save()
+            locked_req.admin_note = escape(note) # Safeguard notes
+            locked_req.save()
 
             AuditLog.objects.create(
-                organization=req.organization,
+                organization=locked_req.organization,
                 user=request.user,
-                action=f"{action.capitalize()}d capital request #{req.id} for ${req.amount:,.2f}. Note: {note or 'None'}"
+                action=f"{action.capitalize()}d capital request #{locked_req.id} for ${locked_req.amount:,.2f}. Note: {note or 'None'}"
             )
 
         messages.success(request, f"Request #{req.id} has been {req.status.lower()}.")
@@ -275,21 +290,24 @@ def allocate_funds(request, org_id, project_id):
                 'error': "Please enter a valid positive dollar amount."
             })
 
-        if amount > org.budget:
-            return render(request, 'orgs/allocate_funds.html', {
-                'org': org, 'project': project,
-                'error': f"Insufficient org budget. Available: ${org.budget:,.2f}"
-            })
-
         with transaction.atomic():
-            org.budget -= amount
-            org.save()
-            project.allocated_budget += amount
-            project.save()
+            locked_org = Organization.objects.select_for_update().get(id=org_id)
+            locked_project = Project.objects.select_for_update().get(id=project_id)
+
+            if amount > locked_org.budget:
+                return render(request, 'orgs/allocate_funds.html', {
+                    'org': locked_org, 'project': locked_project,
+                    'error': f"Insufficient org budget. Available: ${locked_org.budget:,.2f}"
+                })
+
+            locked_org.budget -= amount
+            locked_org.save()
+            locked_project.allocated_budget += amount
+            locked_project.save()
             AuditLog.objects.create(
-                organization=org,
+                organization=locked_org,
                 user=request.user,
-                action=f"Allocated ${amount:,.2f} from org budget to project '{project.name}'."
+                action=f"Allocated ${amount:,.2f} from org budget to project '{locked_project.name}'."
             )
 
         messages.success(request, f"${amount:,.2f} allocated to {project.name}.")
@@ -373,6 +391,9 @@ def create_org_frontend(request):
         target_inst = institution
         if is_platform_admin(user):
             inst_id = request.POST.get('institution_id')
+            if not inst_id:
+                messages.error(request, "Institution is required.")
+                return redirect('superuser_dashboard')
             target_inst = get_object_or_404(Institution, id=inst_id)
 
         if not name:
@@ -431,13 +452,18 @@ def create_user_frontend(request):
 @login_required
 def make_admin(request, user_id):
     """Superuser promotes a user to admin of an org."""
-    if not request.user.is_superuser:
+    if not is_any_superuser(request.user):
         return redirect('dashboard')
 
     if request.method == 'POST':
         target_user = get_object_or_404(User, id=user_id)
         org_id = request.POST.get('org_id')
         org = get_object_or_404(Organization, id=org_id)
+
+        if not is_platform_admin(request.user):
+            institution = get_user_institution(request.user)
+            if org.institution != institution:
+                return redirect('dashboard')
 
         # We no longer grant is_staff so they can't access the admin panel
         org.admins.add(target_user)
@@ -455,13 +481,18 @@ def make_admin(request, user_id):
 @login_required
 def revoke_admin(request, user_id):
     """Superuser revokes admin from a user."""
-    if not request.user.is_superuser:
+    if not is_any_superuser(request.user):
         return redirect('dashboard')
 
     if request.method == 'POST':
         target_user = get_object_or_404(User, id=user_id)
         org_id = request.POST.get('org_id')
         org = get_object_or_404(Organization, id=org_id)
+
+        if not is_platform_admin(request.user):
+            institution = get_user_institution(request.user)
+            if org.institution != institution:
+                return redirect('dashboard')
 
         org.admins.remove(target_user)
         # Only revoke staff if they aren't admin of any other org
@@ -482,10 +513,12 @@ def revoke_admin(request, user_id):
 @login_required
 def transfer_superuser(request):
     """Transfer the institution superuser role to another email/user."""
-    if not request.user.is_superuser:
+    if not is_any_superuser(request.user):
         return redirect('dashboard')
 
-    institution = get_object_or_404(Institution, superuser=request.user)
+    institution = get_user_institution(request.user)
+    if not institution or institution.superuser != request.user:
+        return redirect('dashboard')
 
     if request.method == 'POST':
         new_email = request.POST.get('email', '').strip()
@@ -735,3 +768,42 @@ def export_analytics_pdf(request):
     filename = slugify(title) + ".pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# ── SEO: robots.txt & sitemap ──────────────────────────────────────────────────
+
+def robots_txt(request):
+    """Serve a robots.txt that allows all crawlers and points to the sitemap."""
+    lines = [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /admin/",
+        "Disallow: /accounts/",
+        "Disallow: /dashboard/",
+        "Disallow: /requests/",
+        "Disallow: /org/",
+        "Disallow: /superuser/",
+        "",
+        "Sitemap: https://ledger-pro.org/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
+
+
+def sitemap_xml(request):
+    """Serve a minimal XML sitemap for the public landing page."""
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ledger-pro.org/</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://ledger-pro.org/accounts/login/</loc>
+    <lastmod>2026-03-07</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>"""
+    return HttpResponse(xml, content_type="application/xml")
