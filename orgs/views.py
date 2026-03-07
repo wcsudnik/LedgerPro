@@ -183,16 +183,19 @@ def review_request(request, req_id):
             return redirect('review_request', req_id=req_id)
 
         with transaction.atomic():
+            # Security: Fetch org with select_for_update to handle concurrent approvals safely
+            org = Organization.objects.select_for_update().get(id=req.organization.id)
+            
             if action == 'approve':
                 # Security: Check for sufficient organization budget before approving
-                if req.amount > req.organization.budget:
-                    messages.error(request, f"Cannot approve: Request exceeds organization budget (Available: ${req.organization.budget:,.2f})")
+                if req.amount > org.budget:
+                    messages.error(request, f"Cannot approve: Request exceeds organization budget (Available: ${org.budget:,.2f})")
                     return redirect('review_request', req_id=req_id)
 
                 req.status = 'APPROVED'
                 # Debit directly from the organization budget
-                req.organization.budget -= req.amount
-                req.organization.save()
+                org.budget -= req.amount
+                org.save()
             else:
                 req.status = 'REJECTED'
 
@@ -200,7 +203,7 @@ def review_request(request, req_id):
             req.save()
 
             log_action(
-                request, req.organization,
+                request, org,
                 action=f"{action.capitalize()}d capital request #{req.id} for ${req.amount:,.2f}. Note: {note or 'None'}",
                 details={'action': action, 'amount': str(req.amount), 'request_id': req.id, 'note': note}
             )
