@@ -94,7 +94,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = ["ledgerpro-9ojw.onrender.com", 
                  "127.0.0.1",
                  'ledger-pro.org',
-                 'www.ledger-pro.org',
+                 'www.ledger-pro.org'
                  ]
 
 
