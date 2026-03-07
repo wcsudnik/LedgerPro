@@ -44,6 +44,12 @@ def log_action(request, organization, action, details=None):
     )
 
 
+def landing_page(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'orgs/landing_page.html')
+
+
 @login_required
 def dashboard(request):
     user = request.user

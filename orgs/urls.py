@@ -2,7 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.dashboard, name='dashboard'),
+    path('', views.landing_page, name='landing'),
+    path('dashboard/', views.dashboard, name='dashboard'),
 
     # Capital requests
     path('requests/', views.all_requests, name='all_requests'),
