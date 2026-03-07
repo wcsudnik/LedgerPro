@@ -595,7 +595,7 @@
                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
                     <path d="M4.93 4.93a10 10 0 0 0 0 14.14" />
                 </svg>
-                Admin Panel (Love Shack)
+                Admin Panel
             </a>
             {% endif %}
             {% endif %}
@@ -608,8 +608,7 @@
                 <div class="user-info">
                     <div class="user-name">{{ user.username }}</div>
                     <div class="user-role">
-                        {% if is_platform_admin %}Platform Admin{% elif is_any_superuser %}Institution Superuser{% elif
-                        user.org_admin_of.exists %}Org Admin{% else %}Officer{% endif %}
+                        {% if is_platform_admin %}Platform Admin{% elif is_any_superuser %}Institution Superuser{% elif user.org_admin_of.exists %}Org Admin{% else %}Officer{% endif %}
                     </div>
                 </div>
             </div>

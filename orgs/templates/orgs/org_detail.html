@@ -16,8 +16,7 @@
     style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; padding: 24px 28px; border-left: 4px solid var(--primary);">
     <div style="flex: 1;">
         <h1 style="font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px;">{{ org.name }}</h1>
-        <p style="color: var(--text-muted); font-size: 13px; max-width: 480px; margin-bottom: 8px;">{{
-            org.description|default:"Welcome to the organization's financial portal." }}</p>
+        <p style="color: var(--text-muted); font-size: 13px; max-width: 480px; margin-bottom: 8px;">{{ org.description|default:"Welcome to the organization's financial portal." }}</p>
         <a href="{% url 'org_analytics' org.id %}"
             style="font-size: 12px; color: var(--primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
