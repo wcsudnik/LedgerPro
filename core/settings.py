@@ -93,7 +93,9 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = ["ledgerpro-9ojw.onrender.com",
                  'ledger-pro.org',
-                 'www.ledger-pro.org'
+                 'www.ledger-pro.org',
+                 '127.0.0.1'
+
                  ]
 
 
@@ -159,6 +161,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'orgs.context_processors.platform_context',
             ],
         },
     },

@@ -5,29 +5,135 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Institution Control Panel</h1>
+        <h1 class="page-title">
+            {% if is_platform_admin %}Platform Control Panel{% else %}Institution Control Panel{% endif %}
+        </h1>
         {% if institution %}
         <p class="page-subtitle">Managing <strong>{{ institution.name }}</strong></p>
+        {% elif is_platform_admin %}
+        <p class="page-subtitle">System-wide visibility across all institutions</p>
         {% endif %}
     </div>
-    <a href="{% url 'transfer_superuser' %}" class="btn btn-outline">Transfer Superuser Role</a>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        {% if not is_platform_admin %}
+        <a href="{% url 'institution_analytics' %}" class="btn btn-primary"
+            style="background: var(--info); border: none;">View Institutional Analytics</a>
+        <a href="{% url 'transfer_superuser' %}" class="btn btn-outline">Transfer Superuser Role</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if is_platform_admin %}
+<!-- Platform Admin: Manage Institutions -->
+<div class="card" style="margin-bottom: 24px;">
+    <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">Manage Institutions</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+        {% for inst in institutions %}
+        <div style="border: 1px solid var(--border); padding: 12px; border-radius: 8px;">
+            <div style="font-weight: 700;">{{ inst.name }}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Superuser: {{ inst.superuser.username|default:"None"
+                }}</div>
+        </div>
+        {% endfor %}
+        <a href="/admin/orgs/institution/add/" class="btn btn-outline"
+            style="display: flex; align-items: center; justify-content: center;">+ Add Institution</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+    <!-- Create Organization -->
+    <div class="card">
+        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Create New Organization</h2>
+        <form method="post" action="{% url 'create_org_frontend' %}"
+            style="display: flex; flex-direction: column; gap: 12px;">
+            {% csrf_token %}
+            {% if is_platform_admin %}
+            <div>
+                <label
+                    style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Institution</label>
+                <select name="institution_id" class="form-control" required>
+                    {% for inst in institutions %}
+                    <option value="{{ inst.id }}">{{ inst.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div>
+                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Org Name</label>
+                <input type="text" name="name" class="form-control" placeholder="e.g. Chess Club" required>
+            </div>
+            <div>
+                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Initial Budget
+                    ($)</label>
+                <input type="number" name="budget" class="form-control" value="0.00" step="0.01">
+            </div>
+            <button type="submit" class="btn">Create Organization</button>
+        </form>
+    </div>
+
+    <!-- Create User -->
+    <div class="card">
+        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Create New User Account</h2>
+        <form method="post" action="{% url 'create_user_frontend' %}"
+            style="display: flex; flex-direction: column; gap: 12px;">
+            {% csrf_token %}
+            <div>
+                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="jdoe" required>
+            </div>
+            <div>
+                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Email</label>
+                <input type="email" name="email" class="form-control" placeholder="jdoe@example.edu">
+            </div>
+            <div>
+                <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;">Password</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-outline">Create User</button>
+        </form>
+    </div>
 </div>
 
 {% if messages %}
 {% for message in messages %}
-<div class="alert alert-info">{{ message }}</div>
+<div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %}"
+    style="margin-bottom: 24px;">
+    {{ message }}
+</div>
 {% endfor %}
 {% endif %}
+
+<!-- Search and List -->
+<div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+    <h2 style="font-size: 18px; font-weight: 700;">Database Inventory</h2>
+    <form method="get" action="{% url 'superuser_dashboard' %}" style="display: flex; gap: 8px;">
+        <input type="text" name="q" class="form-control" placeholder="Search clubs or orgs..."
+            value="{{ search_query }}" style="width: 250px;">
+        <button type="submit" class="btn btn-outline" style="padding: 0 16px;">Search</button>
+        {% if search_query %}
+        <a href="{% url 'superuser_dashboard' %}" class="btn btn-outline"
+            style="padding: 0 16px; color: var(--text-muted);">Clear</a>
+        {% endif %}
+    </form>
+</div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start;">
 
     <!-- ALL ORGANIZATIONS -->
     <div>
-        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Registered Organizations</h2>
+        <h3
+            style="font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text-label); text-transform: uppercase;">
+            Organizations</h3>
         {% for org in all_orgs %}
         <div class="card" style="margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="font-size: 15px; font-weight: 700;">{{ org.name }}</h3>
+                <div>
+                    <h3 style="font-size: 15px; font-weight: 700;">{{ org.name }}</h3>
+                    {% if is_platform_admin %}<div style="font-size: 10px; color: var(--info);">{{ org.institution.name
+                        }}</div>{% endif %}
+                </div>
                 <span class="money">${{ org.budget }}</span>
             </div>
 
@@ -49,68 +155,82 @@
                 </span>
             </div>
 
-            <a href="{% url 'org_detail' org.id %}" class="btn btn-outline"
-                style="font-size: 11px; padding: 6px 12px;">Manage Org &rarr;</a>
+            <div style="display: flex; gap: 8px;">
+                <a href="{% url 'org_detail' org.id %}" class="btn btn-outline"
+                    style="font-size: 11px; padding: 6px 12px;">View Portal &rarr;</a>
+                <a href="/admin/orgs/organization/{{ org.id }}/change/" class="btn btn-outline"
+                    style="font-size: 11px; padding: 6px 12px; {% if not is_platform_admin %}display:none;{% endif %}">Admin
+                    Edit</a>
+            </div>
         </div>
         {% empty %}
-        <div class="card" style="text-align: center; color: var(--text-muted); padding: 32px;">No organizations created
-            yet.</div>
+        <div class="card" style="text-align: center; color: var(--text-muted); padding: 32px;">No organizations found
+            matching your search.</div>
         {% endfor %}
     </div>
 
     <!-- USER MANAGEMENT -->
     <div>
-        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">User Access Control</h2>
+        <h3
+            style="font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text-label); text-transform: uppercase;">
+            User Permissions</h3>
         <div class="card" style="padding: 0; overflow: hidden;">
-            <table>
+            <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                    <tr>
-                        <th>User</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                    <tr style="background: var(--bg); border-bottom: 1px solid var(--border);">
+                        <th style="padding: 12px; text-align: left; font-size: 12px;">User</th>
+                        <th style="padding: 12px; text-align: left; font-size: 12px;">Current Roles</th>
+                        <th style="padding: 12px; text-align: left; font-size: 12px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for u in all_users %}
-                    {% if not u.is_superuser %}
-                    <tr>
-                        <td>
+                    {% if not u.is_superuser or is_platform_admin %}
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px;">
                             <div style="font-weight: 600;">{{ u.username }}</div>
                             <div style="font-size: 11px; color: var(--text-muted);">{{ u.email|default:"No email" }}
                             </div>
                         </td>
-                        <td>
-                            {% if u.is_staff %}
-                            <span class="badge approved">Admin</span>
+                        <td style="padding: 12px;">
+                            {% if u == institution.superuser %}
+                            <span class="badge" style="background: var(--info); color: white;">Inst. Superuser</span>
+                            {% elif u.org_admin_of.exists %}
+                            <span class="badge approved">Org Admin</span>
                             {% else %}
                             <span class="badge pending">Officer</span>
                             {% endif %}
                         </td>
-                        <td style="min-width: 180px;">
-                            {% if u.org_admin_of.exists %}
-                            {% for org in u.org_admin_of.all %}
-                            <form method="post" action="{% url 'revoke_admin' u.id %}" style="margin-bottom: 4px;">
-                                {% csrf_token %}
-                                <input type="hidden" name="org_id" value="{{ org.id }}">
-                                <button type="submit" class="btn btn-outline"
-                                    style="font-size: 10px; padding: 4px 8px; color: var(--danger) !important; border-color: #FCA5A5;">
-                                    Revoke Admin ({{ org.name }})
-                                </button>
-                            </form>
-                            {% endfor %}
-                            {% else %}
-                            <form method="post" action="{% url 'make_admin' u.id %}" style="display: flex; gap: 6px;">
-                                {% csrf_token %}
-                                <select name="org_id" class="form-control"
-                                    style="font-size: 11px; padding: 4px 8px; height: 28px;">
-                                    {% for org in all_orgs %}
-                                    <option value="{{ org.id }}">{{ org.name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="btn" style="font-size: 11px; padding: 4px 10px;">Grant
-                                    Admin</button>
-                            </form>
-                            {% endif %}
+                        <td style="padding: 12px;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                {% if u.org_admin_of.exists %}
+                                {% for org in u.org_admin_of.all %}
+                                {% if org.institution == institution or is_platform_admin %}
+                                <form method="post" action="{% url 'revoke_admin' u.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="org_id" value="{{ org.id }}">
+                                    <button type="submit" class="btn btn-outline"
+                                        style="font-size: 9px; padding: 2px 6px; color: var(--danger) !important; border-color: #FCA5A5;">
+                                        Revoke ({{ org.name }})
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% endfor %}
+                                {% else %}
+                                <form method="post" action="{% url 'make_admin' u.id %}"
+                                    style="display: flex; gap: 4px;">
+                                    {% csrf_token %}
+                                    <select name="org_id" class="form-control"
+                                        style="font-size: 10px; padding: 2px 4px; height: 24px;">
+                                        {% for org in all_orgs %}
+                                        <option value="{{ org.id }}">{{ org.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn"
+                                        style="font-size: 10px; padding: 2px 6px;">Promote</button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endif %}

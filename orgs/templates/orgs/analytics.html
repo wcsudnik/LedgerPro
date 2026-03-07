@@ -1,0 +1,171 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}Analytics – LedgerPro{% endblock %}
+
+{% block content %}
+<div class="page-header"
+    style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
+    <div>
+        <h1 class="page-title">
+            {% if is_institution %}Institution Analytics: {{ institution.name }}{% else %}Organization Analytics: {{org.name }}{% endif %}
+        </h1>
+        <p class="page-subtitle">Financial performance and categorical breakdown for <strong>{{ selected_year }}</strong></p>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <form method="get" style="display: flex; gap: 8px; align-items: center;">
+            <label
+                style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-label);">Fiscal
+                Year</label>
+            <select name="year" class="form-control" onchange="this.form.submit()"
+                style="width: 100px; padding: 4px 8px; height: 32px;">
+                {% for yr in years %}
+                <option value="{{ yr }}">{{ yr }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="{% url 'export_analytics_pdf' %}?year={{ selected_year }}{% if org %}&org_id={{ org.id }}{% endif %}"
+            class="btn btn-primary"
+            style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Export PDF
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+    <!-- SPENDING CHART -->
+    <div class="card">
+        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 20px;">Expenditure by Category</h2>
+        <div style="height: 300px; display: flex; align-items: center; justify-content: center;">
+            <canvas id="spendingChart"></canvas>
+        </div>
+    </div>
+
+    <!-- INCOME CHART -->
+    <div class="card">
+        <h2 style="font-size: 16px; font-weight: 700; margin-bottom: 20px;">Income by Source</h2>
+        <div style="height: 300px; display: flex; align-items: center; justify-content: center;">
+            <canvas id="incomeChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <!-- SPENDING TABLE -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 16px; border-bottom: 1px solid var(--border);">
+            <h2 style="font-size: 15px; font-weight: 700;">Expense Breakdown</h2>
+        </div>
+        <table style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th style="text-align: right;">Total Spent</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in spending_by_cat %}
+                <tr>
+                    <td>{{ item.category }}</td>
+                    <td style="text-align: right; font-weight: 600; color: var(--danger);">${{ item.total|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" style="text-align: center; color: var(--text-muted); padding: 24px;">No expenses
+                        recorded this year.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- INCOME TABLE -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 16px; border-bottom: 1px solid var(--border);">
+            <h2 style="font-size: 15px; font-weight: 700;">Revenue Breakdown</h2>
+        </div>
+        <table style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th style="text-align: right;">Total Income</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in income_by_source %}
+                <tr>
+                    <td>{{ item.source }}</td>
+                    <td style="text-align: right; font-weight: 600; color: var(--success);">${{ item.total|floatformat:2
+                        }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="2" style="text-align: center; color: var(--text-muted); padding: 24px;">No income
+                        recorded this year.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Scripts for Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const COLORS = [
+        '#6366F1', '#10B981', '#F59E0B', '#EF4444',
+        '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'
+    ];
+
+    // Spending Chart
+    const ctxSpent = document.getElementById('spendingChart').getContext('2d');
+    new Chart(ctxSpent, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for item in spending_by_cat %}"{{ item.category|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for item in spending_by_cat %}{{ item.total }}{% if not forloop.last %}, {% endif %} {% endfor %}],
+    backgroundColor: COLORS,
+        borderWidth: 0
+            }]
+        },
+    options: {
+        responsive: true,
+            maintainAspectRatio: false,
+                plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+    });
+
+    // Income Chart
+    const ctxIncome = document.getElementById('incomeChart').getContext('2d');
+    new Chart(ctxIncome, {
+        type: 'bar',
+        data: {
+            labels: [{% for item in income_by_source %}"{{ item.source|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Total Revenue ($)',
+            data: [{% for item in income_by_source %}{{ item.total }}{% if not forloop.last %}, {% endif %} {% endfor %}],
+    backgroundColor: '#10B981',
+        borderRadius: 4
+            }]
+        },
+    options: {
+        responsive: true,
+            maintainAspectRatio: false,
+                plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+    });
+</script>
+{% endblock %}

@@ -6,19 +6,21 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">
-            {% if role == 'superuser' %}All Organizations
+            {% if role == 'platform_admin' %}All Institutions & Organizations
+            {% elif role == 'institution_superuser' %}Organizations for {{ institution.name }}
             {% elif role == 'admin' %}My Organizations
             {% else %}My Organizations
             {% endif %}
         </h1>
         <p class="page-subtitle">
-            {% if role == 'superuser' %}Viewing all organizations across the institution
+            {% if role == 'platform_admin' %}Viewing everything across the platform
+            {% elif role == 'institution_superuser' %}Managing {{ institution.name }} (Institution Admin)
             {% elif role == 'admin' %}Organizations you manage
             {% else %}Organizations you are an officer of
             {% endif %}
         </p>
     </div>
-    {% if role == 'superuser' %}
+    {% if role == 'platform_admin' or role == 'institution_superuser' %}
     <a href="/admin/orgs/organization/add/" class="btn">+ New Organization</a>
     {% endif %}
 </div>
@@ -55,7 +57,8 @@
         </div>
         <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 4px;">No Organizations Found</h3>
         <p style="color: var(--text-muted); font-size: 13px;">
-            {% if role == 'superuser' or role == 'admin' %}Start by creating one via the Admin panel.
+            {% if role == 'platform_admin' or role == 'institution_superuser' or role == 'admin' %}Start by creating one
+            via the Admin panel.
             {% else %}You have not been assigned to any organization yet.{% endif %}
         </p>
     </div>

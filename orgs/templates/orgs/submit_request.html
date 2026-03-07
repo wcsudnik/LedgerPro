@@ -19,6 +19,14 @@
         <form method="post">
             {% csrf_token %}
             <div class="form-group">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-control" required>
+                    {% for key, val in categories %}
+                    <option value="{{ key }}">{{ val }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Amount Requested ($)</label>
                 <input type="number" step="0.01" min="0.01" name="amount" class="form-control" placeholder="0.00"
                     required autofocus>

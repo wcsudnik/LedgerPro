@@ -575,7 +575,7 @@
                 Capital Requests
             </a>
 
-            {% if user.is_superuser %}
+            {% if is_any_superuser %}
             <span class="nav-section-label">Administration</span>
             <a href="{% url 'superuser_dashboard' %}" class="nav-link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -587,6 +587,7 @@
                 </svg>
                 Control Panel
             </a>
+            {% if is_platform_admin %}
             <a href="/admin/" class="nav-link">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                     stroke-linejoin="round">
@@ -596,6 +597,7 @@
                 </svg>
                 Admin Panel
             </a>
+            {% endif %}
             {% endif %}
         </nav>
 
