@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import Institution, Organization, Project, CapitalRequest, AuditLog
+from .models import Institution, Organization, Project, CapitalRequest, AuditLog, BulletinPost
 from django.db import transaction
 from decimal import Decimal, InvalidOperation
 from django.utils.html import strip_tags, escape
@@ -25,17 +25,36 @@ def can_access_org(user, org):
     return is_admin_for_org(user, org) or is_officer_for_org(user, org)
 
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
+def log_action(request, organization, action, details=None):
+    AuditLog.objects.create(
+        organization=organization,
+        user=request.user if request.user.is_authenticated else None,
+        action=action,
+        ip_address=get_client_ip(request),
+        details=details
+    )
+
+
 @login_required
 def dashboard(request):
     user = request.user
     if user.is_superuser:
-        organizations = Organization.objects.all()
+        organizations = Organization.objects.all().prefetch_related('projects', 'audit_logs')
         role = 'superuser'
     elif Organization.objects.filter(admins=user).exists():
-        organizations = Organization.objects.filter(admins=user)
+        organizations = Organization.objects.filter(admins=user).prefetch_related('projects', 'audit_logs')
         role = 'admin'
     else:
-        organizations = user.officer_of.all()
+        organizations = user.officer_of.all().prefetch_related('projects', 'audit_logs')
         role = 'officer'
 
     return render(request, 'orgs/dashboard.html', {
@@ -74,12 +93,14 @@ def project_detail(request, org_id, project_id):
 
     project = get_object_or_404(Project, id=project_id, organization=org)
     req_qs = project.requests.all().order_by('-created_at')
+    bulletins = project.bulletin_posts.all().order_by('-created_at')
     is_admin = is_admin_for_org(request.user, org)
 
     return render(request, 'orgs/project_detail.html', {
         'org': org,
         'project': project,
         'requests': req_qs,
+        'bulletins': bulletins,
         'is_admin': is_admin,
     })
 
@@ -133,10 +154,10 @@ def submit_request(request, org_id, project_id):
                 # Escape the purpose text to satisfy the 'no code' requirement
                 purpose=escape(purpose),
             )
-            AuditLog.objects.create(
-                organization=org,
-                user=request.user,
-                action=f"Submitted capital request #{req.id} for ${amount:,.2f} under project '{project.name}'."
+            log_action(
+                request, org,
+                action=f"Submitted capital request #{req.id} for ${amount:,.2f} under project '{project.name}'.",
+                details={'amount': str(amount), 'project_id': project.id, 'request_id': req.id}
             )
         messages.success(request, "Capital request submitted for admin review.")
         return redirect('project_detail', org_id=org.id, project_id=project.id)
@@ -178,10 +199,10 @@ def review_request(request, req_id):
             req.admin_note = escape(note) # Safeguard notes
             req.save()
 
-            AuditLog.objects.create(
-                organization=req.organization,
-                user=request.user,
-                action=f"{action.capitalize()}d capital request #{req.id} for ${req.amount:,.2f}. Note: {note or 'None'}"
+            log_action(
+                request, req.organization,
+                action=f"{action.capitalize()}d capital request #{req.id} for ${req.amount:,.2f}. Note: {note or 'None'}",
+                details={'action': action, 'amount': str(req.amount), 'request_id': req.id, 'note': note}
             )
 
         messages.success(request, f"Request #{req.id} has been {req.status.lower()}.")
@@ -213,10 +234,10 @@ def create_org(request):
             description=strip_tags(description),
             budget=budget
         )
-        AuditLog.objects.create(
-            organization=org,
-            user=request.user,
-            action=f"Created organization '{org.name}' with initial budget ${budget:,.2f}."
+        log_action(
+            request, org,
+            action=f"Created organization '{org.name}' with initial budget ${budget:,.2f}.",
+            details={'name': org.name, 'budget': str(budget)}
         )
         messages.success(request, f"Organization '{org.name}' created.")
         return redirect('dashboard')
@@ -243,10 +264,10 @@ def edit_org(request, org_id):
                 pass
         
         org.save()
-        AuditLog.objects.create(
-            organization=org,
-            user=request.user,
-            action=f"Updated organization settings."
+        log_action(
+            request, org,
+            action=f"Updated organization settings.",
+            details={'description': org.description, 'name': org.name, 'budget': str(org.budget)}
         )
         messages.success(request, "Organization settings updated.")
         return redirect('org_detail', org_id=org.id)
@@ -290,10 +311,10 @@ def make_admin(request, user_id):
         target_user.save()
         org.admins.add(target_user)
 
-        AuditLog.objects.create(
-            organization=org,
-            user=request.user,
-            action=f"Granted admin rights to '{target_user.username}' for organization '{org.name}'."
+        log_action(
+            request, org,
+            action=f"Granted admin rights to '{target_user.username}' for organization '{org.name}'.",
+            details={'user_id': target_user.id, 'username': target_user.username}
         )
         messages.success(request, f"{target_user.username} is now an admin of {org.name}.")
 
@@ -317,10 +338,10 @@ def revoke_admin(request, user_id):
             target_user.is_staff = False
             target_user.save()
 
-        AuditLog.objects.create(
-            organization=org,
-            user=request.user,
-            action=f"Revoked admin rights from '{target_user.username}' for organization '{org.name}'."
+        log_action(
+            request, org,
+            action=f"Revoked admin rights from '{target_user.username}' for organization '{org.name}'.",
+            details={'user_id': target_user.id, 'username': target_user.username}
         )
         messages.success(request, f"Admin access revoked from {target_user.username}.")
 
@@ -383,13 +404,71 @@ def create_project(request, org_id):
                 description=strip_tags(description),
                 bulletin=strip_tags(bulletin),
             )
-            AuditLog.objects.create(
-                organization=org,
-                user=request.user,
-                action=f"Created project '{project.name}'."
+            log_action(
+                request, org,
+                action=f"Created project '{project.name}'.",
+                details={'project_id': project.id, 'name': project.name}
             )
 
         messages.success(request, f"Project '{project.name}' created successfully.")
         return redirect('project_detail', org_id=org.id, project_id=project.id)
 
     return render(request, 'orgs/create_project.html', {'org': org})
+@login_required
+def post_bulletin(request, org_id, project_id):
+    org = get_object_or_404(Organization, id=org_id)
+    if not can_access_org(request.user, org):
+        return redirect('dashboard')
+
+    project = get_object_or_404(Project, id=project_id, organization=org)
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        content = request.POST.get('content', '').strip()
+
+        if content:
+            with transaction.atomic():
+                BulletinPost.objects.create(
+                    project=project,
+                    author=request.user,
+                    title=title,
+                    content=content
+                )
+                log_action(
+                    request, org,
+                    action=f"Posted to '{project.name}' bulletin.",
+                    details={'project_id': project.id, 'title': title}
+                )
+            messages.success(request, "Bulletin posted.")
+        else:
+            messages.error(request, "Bulletin content cannot be empty.")
+
+    return redirect('project_detail', org_id=org.id, project_id=project.id)
+
+
+@login_required
+def audit_log(request, org_id=None):
+    """View detailed audit logs. Superusers see all, Admins see theirs."""
+    user = request.user
+
+    if org_id:
+        org = get_object_or_404(Organization, id=org_id)
+        if not is_admin_for_org(user, org):
+            return redirect('dashboard')
+        logs = AuditLog.objects.filter(organization=org).order_by('-timestamp')
+        title = f"Audit Log – {org.name}"
+    else:
+        if not user.is_superuser:
+            # If not superuser, maybe they can see logs for all orgs they admin?
+            orgs = Organization.objects.filter(admins=user)
+            logs = AuditLog.objects.filter(organization__in=orgs).order_by('-timestamp')
+            title = "My Organizations' Audit Logs"
+        else:
+            logs = AuditLog.objects.all().order_by('-timestamp')
+            title = "Global Institution Audit Log"
+
+    return render(request, 'orgs/audit_log.html', {
+        'logs': logs,
+        'page_title': title,
+        'is_superuser': user.is_superuser
+    })

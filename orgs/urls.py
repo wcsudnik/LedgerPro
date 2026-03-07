@@ -17,6 +17,11 @@ urlpatterns = [
     # Project pages
     path('org/<int:org_id>/project/<int:project_id>/', views.project_detail, name='project_detail'),
     path('org/<int:org_id>/project/<int:project_id>/request/', views.submit_request, name='submit_request_project'),
+    path('org/<int:org_id>/project/<int:project_id>/post-bulletin/', views.post_bulletin, name='post_bulletin'),
+
+    # Audit logs
+    path('audit-log/', views.audit_log, name='audit_log'),
+    path('org/<int:org_id>/audit-log/', views.audit_log, name='org_audit_log'),
 
     # Superuser management
     path('superuser/', views.superuser_dashboard, name='superuser_dashboard'),

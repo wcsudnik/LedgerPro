@@ -74,6 +74,27 @@ class Project(models.Model):
         return f"{self.name} ({self.organization.name})"
 
 
+class BulletinPost(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='bulletin_posts')
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200, blank=True)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if self.title:
+            self.title = strip_tags(self.title)
+        if self.content:
+            self.content = strip_tags(self.content)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Post on {self.project.name} by {self.author.username} at {self.created_at}"
+
+
 class CapitalRequest(models.Model):
     STATUS_CHOICES = [
         ('PENDING', 'Pending Review'),
@@ -106,6 +127,8 @@ class AuditLog(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='audit_logs')
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     action = models.TextField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    details = models.JSONField(null=True, blank=True, help_text="Structured details of the change")
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

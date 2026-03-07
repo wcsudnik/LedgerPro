@@ -10,7 +10,11 @@
         <p class="page-subtitle">Managing <strong>{{ institution.name }}</strong></p>
         {% endif %}
     </div>
-    <a href="{% url 'transfer_superuser' %}" class="btn btn-outline">Transfer Superuser Role</a>
+    <div style="display: flex; gap: 12px;">
+        <a href="{% url 'audit_log' %}" class="btn btn-outline"
+            style="border-color: var(--primary); color: var(--primary);">Global Audit Log</a>
+        <a href="{% url 'transfer_superuser' %}" class="btn btn-outline">Transfer Superuser Role</a>
+    </div>
 </div>
 
 {% if messages %}

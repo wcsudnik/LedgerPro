@@ -1,0 +1,70 @@
+{% extends 'orgs/base.html' %}
+
+{% block title %}{{ page_title }} – LedgerPro{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ page_title }}</h1>
+        <p class="page-subtitle">Historical record of all platform activities and configuration changes.</p>
+    </div>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; background: var(--bg); border-bottom: 2px solid var(--border);">
+                <th
+                    style="padding: 16px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-label);">
+                    Timestamp</th>
+                <th
+                    style="padding: 16px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-label);">
+                    User</th>
+                <th
+                    style="padding: 16px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-label);">
+                    Organization</th>
+                <th
+                    style="padding: 16px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-label);">
+                    Action</th>
+                <th
+                    style="padding: 16px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-label);">
+                    IP Address</th>
+                <th
+                    style="padding: 16px 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-label);">
+                    Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;"
+                onmouseover="this.style.background='rgba(0,0,0,0.02)'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 14px 20px; font-family: monospace; font-size: 12px; color: var(--text-muted);">{{
+                    log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                <td style="padding: 14px 20px;">
+                    <div style="font-weight: 600; font-size: 14px;">{{ log.user.username|default:"System" }}</div>
+                    <div style="font-size: 11px; color: var(--text-muted);">{{ log.user.email }}</div>
+                </td>
+                <td style="padding: 14px 20px; font-size: 13px;">{{ log.organization.name }}</td>
+                <td style="padding: 14px 20px; font-size: 14px;">{{ log.action }}</td>
+                <td style="padding: 14px 20px; font-family: monospace; font-size: 12px; color: var(--text-muted);">{{
+                    log.ip_address|default:"N/A" }}</td>
+                <td style="padding: 14px 20px;">
+                    {% if log.details %}
+                    <pre
+                        style="font-size: 11px; background: var(--bg); padding: 8px; border-radius: 6px; border: 1px solid var(--border); white-space: pre-wrap; margin: 0; color: var(--text-main);">{{ log.details|json_script:"log-data"|slice:"30:-9" }}</pre>
+                    {% else %}
+                    <span style="color: var(--text-muted); font-size: 12px; font-style: italic;">None</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="padding: 48px; text-align: center; color: var(--text-muted);">
+                    No audit records found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
