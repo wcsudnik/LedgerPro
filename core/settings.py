@@ -262,3 +262,23 @@ SOCIALACCOUNT_PROVIDERS = {
 # Auto-signup and domain restriction example (optional)
 # SOCIALACCOUNT_AUTO_SIGNUP = True
 # SOCIALACCOUNT_ADAPTER = 'orgs.adapters.MySocialAccountAdapter'
+
+# ── Email Configuration ────────────────────────────────────────────────────────
+# In development, emails are printed to the console/terminal.
+# In production, configure the SMTP env vars and switch EMAIL_BACKEND.
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST          = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT          = int(os.getenv('EMAIL_PORT', 587))
+    EMAIL_USE_TLS       = True
+    EMAIL_HOST_USER     = os.getenv('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+    DEFAULT_FROM_EMAIL  = os.getenv('DEFAULT_FROM_EMAIL', 'LedgerPro <noreply@ledger-pro.org>')
+
+# ── Allauth Password Reset Settings ───────────────────────────────────────────
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'username*', 'password1*', 'password2*']  # email is required
+ACCOUNT_EMAIL_VERIFICATION = 'none'   # Set to 'mandatory' if you want email confirmation on signup
+ACCOUNT_LOGIN_ON_PASSWORD_RESET = True  # Auto-login after a successful password reset
+

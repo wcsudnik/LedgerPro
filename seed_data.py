@@ -3,7 +3,7 @@ from orgs.models import Organization, Project
 
 # Create Admin User
 if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@example.com', 'admin')
+    User.objects.create_superuser('wcsudnik', 'wcsudnik@gmail.com', 'CPX-9363-bv3-48j')
     print("Created superuser: admin / admin")
 
 # Create Officer
